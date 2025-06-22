@@ -4,7 +4,7 @@ Drills and Exercises from Bjarne Stroustrup's book:
 ## Programming Principles and Practice using C++, 3rd Edition
 
 ### Note
-All programs in this repository were compiled and run using the c++23 standard, and flags as shown below:
+All programs in this repository were compiled and run using the c++ standard and chosen flags  as shown below:
 
 ``` g++ -std=c++23 -Wall -Werror -Wextra -pedantic <name-of-program.cpp> -o <name-of-executable> && ./<name-of-executable> ```
 
