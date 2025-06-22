@@ -9,6 +9,7 @@ All programs in this repository were compiled and run using the c++ standard and
 ``` g++ -std=c++23 -Wall -Werror -Wextra -pedantic <name-of-program.cpp> -o <name-of-executable> && ./<name-of-executable> ```
 
 A consequence of this is that some portions of the code have to modified so as to avoid all warnings from the compiler.
+
 This is deliberately done so as to develop and adhere to 'best practices' and the habit of following good coding style.
 
 This repository is simply just for
