@@ -2,9 +2,9 @@
 #include <stdexcept>
 #include <vector>
 #include <cctype>
-#include <cmath> //for pow(base, exp) and sqrt
+#include <cmath>
 
-std::string intro = "Welcome to our simple calculator.\nThe calculator supports the following arithmetic operations:\nAddition(+), Subtraction(-), Division(/), multiplication(*), factorial(!), modulus(%) and square root (sqrt()).\nYou can also make use of named variables and predefined constants.\nFor addition  technical information enter (h), enter (;) to end an expression and enter (q) to quit the application.\n";
+std::string intro = "Welcome to our simple calculator.\nThe calculator supports the following arithmetic operations:\nAddition(+), Subtraction(-), Division(/), multiplication(*), factorial(!), modulus(%) square root (sqrt()) and exponentiation(^).\nYou can also make use of named variables and predefined constants.\nFor addition  technical information enter (h), enter (;) to end an expression and enter (q) to quit the application.\n";
 
 std::string help_text = "USING NAMED VARIABLES.\nYou can define variables using the keyword 'let', followed by a space and then the name of the variable, and an equality sign (=) followed by the value you wish to assign to the variable.\nYou can assign a integer, floating-point literal or an expression (in parentheses) to a variable.\nVariable definitions are to be seperated by a comma, and a semi-colon (;) is to print the result of the expression that has been entered.\nNote that the use of the factorial function for non-integer value results in the truncation of the numbers after the decimal point.\nTaking square root of negative numbers is prohibited.\n";
 
@@ -20,7 +20,6 @@ const char let = 'L'; //declaration token
 const char square_root = 's';   //sqrt token
 const char power = 'p'; //pow token
 const std::string declkey = "let"; //declaration key word
-const std::string pow_key = "pow";  //key word for power operation
 const std::string sqrt_key = "sqrt";    //key word for square root operation
 
 class Variable {
@@ -92,6 +91,7 @@ Token Token_stream::get() {
         case '}':
         case '+':
         case '-':
+        case '^':
         case '*':
         case '/':
         case '!':
@@ -116,7 +116,6 @@ Token Token_stream::get() {
                 while (std::cin.get(ch) && (std::isalpha(ch) || std::isdigit(ch))) s += ch;
                 std::cin.putback(ch);
                 if (s == declkey) return Token(let);
-                if (s == pow_key) return Token(power);
                 if (s == sqrt_key) return Token(square_root);
                 return Token(variable, s);
             }
@@ -229,18 +228,35 @@ double secondary() {
     }
 }
 
-double term(){
+double tertiary() {
     double left = secondary();
     Token t = ts.get();
     while (true) {
         switch (t.kind) {
+            case '^':
+                left = std::pow(left, secondary());
+                t = ts.get();
+                break;
+
+            default:
+                ts.putback(t);
+                return left;
+        }
+    }
+}
+
+double term(){
+    double left = tertiary();
+    Token t = ts.get();
+    while (true) {
+        switch (t.kind) {
             case '*':
-                left *= secondary();
+                left *= tertiary();
                 t = ts.get();
                 break;
 
             case '/': {
-                double d = secondary();
+                double d = tertiary();
                 if (d==0) throw std::runtime_error("Math Error: division by zero");
                 left /= d;
                 t = ts.get();
@@ -248,7 +264,7 @@ double term(){
             }
 
             case '%': {
-                double d = secondary();
+                double d = tertiary();
                 left = fmod(left, d); // floating-point module defined above
                 t = ts.get();
                 break;
