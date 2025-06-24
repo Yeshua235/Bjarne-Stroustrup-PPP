@@ -6,12 +6,13 @@
 
 std::string intro = "Welcome to our simple calculator.\nThe calculator supports the following arithmetic operations:\nAddition(+), Subtraction(-), Division(/), multiplication(*), factorial(!), modulus(%) square root (sqrt()) and exponentiation(^).\nYou can also make use of named variables and predefined constants.\nFor addition  technical information enter (h), enter (;) to end an expression and enter (q) to quit the application.\n";
 
-std::string help_text = "USING NAMED VARIABLES.\nYou can define variables using the keyword 'let', followed by a space and then the name of the variable, and an equality sign (=) followed by the value you wish to assign to the variable.\nYou can assign a integer, floating-point literal or an expression (in parentheses) to a variable.\nVariable definitions are to be seperated by a comma, and a semi-colon (;) is to print the result of the expression that has been entered.\nNote that the use of the factorial function for non-integer value results in the truncation of the numbers after the decimal point.\nTaking square root of negative numbers is prohibited.\n";
+std::string help_text = "USING NAMED VARIABLES.\n1. You can define variables using the keyword 'let', followed by a space and then the name of the variable, and an equality sign (=) followed by the value you wish to assign to the variable.\n2. You can assign a integer, floating-point literal or an expression (in parentheses) to a variable.\n3. Variable definitions are to be seperated by a comma, and a semi-colon (;) is to print the result of the expression that has been entered.\n4. Enter ('l') to see a list of all the variables in memory.\nRESERVED KEYWORDS\n1. Based on the use of the letters (q, h and l) as command keywords, they cannot be used as the name of a variable.\nADDITIONAL INFO\n1. Note that the use of the factorial function for non-integer value results in the truncation of the numbers after the decimal point.\n2. Taking square root of negative numbers is prohibited.\n";
 
 constexpr char number_kind = '8';
 constexpr char quit = 'q';
 constexpr char print = ';';
 constexpr char help = 'h';
+constexpr char variable_list = 'l';
 constexpr std::string prompt = "> ";
 constexpr std::string result = "Ans = ";
 
@@ -83,8 +84,6 @@ Token Token_stream::get() {
 
     switch (ch) {
         case print:
-        case quit:
-        case help:
         case '(':
         case ')':
         case '{':
@@ -117,14 +116,28 @@ Token Token_stream::get() {
                 std::cin.putback(ch);
                 if (s == declkey) return Token(let);
                 if (s == sqrt_key) return Token(square_root);
+                if (s == "l") return Token(variable_list);
+                if (s == "h") return Token(help);
+                if (s == "q") return Token(quit);
                 return Token(variable, s);
             }
             throw std::runtime_error("Bad token");
     }
 }
 
+class Symbol_table {
+    private:
+        std::vector<Variable> var_table;
+    public:
+        bool is_declared(std::string var);
+        double declare (std::string var, double val);
+        double get (std::string var);
+        void var_list();
+        void set(std::string var, double val);
+};
+
 Token_stream ts;
-std::vector<Variable> var_table;
+Symbol_table variable_table;
 
 double expression();    //so that primary() can call expression
 double statement();   //so that primary can call declaration
@@ -143,24 +156,34 @@ void error_recovery() {
     ts.ignore(print);
 }
 
-bool is_declared(std::string var) {
+void Symbol_table::set(std::string var, double val) {
+    var_table.emplace_back(var, val);
+}
+
+bool Symbol_table::is_declared(std::string var) {
     for (const Variable& v : var_table) {
         if (v.name == var) return true;
     }
     return false;
 }
 
-double define_name(std::string var, double val) {
-    if (is_declared(var)) throw std::runtime_error("duplicate declarion of variable");
-    var_table.push_back(Variable(var, val));
+double Symbol_table::declare(std::string var, double val) {
+    if (variable_table.is_declared(var)) throw std::runtime_error("duplicate declarion of variable");
+    set(var, val);
     return val;
 }
 
-double get_variable_value(std::string var) {
+double Symbol_table::get(std::string var) {
     for (const Variable& v : var_table){
         if (v.name == var) return v.value;
     }
     throw std::runtime_error("undefined variable identified");
+}
+
+void Symbol_table::var_list() {
+    for (const Variable& v : var_table) {
+        std::cout << v.name << " = " << v.value << '\n';
+    }
 }
 
 double get_square_root(double num) {
@@ -197,7 +220,8 @@ double primary() {
             return t.value;
 
         case variable:
-            return get_variable_value(t.name);
+            std::cout << t.name << '\n';
+            return variable_table.get(t.name);
 
         case '-':
             return -primary();
@@ -307,7 +331,7 @@ double declaration() {
     if (t2.kind != '=') throw std::runtime_error("'=' missing in declaration of variable");
 
     double d = expression();
-    define_name(t.name, d); // define_name is defined above
+    variable_table.declare(t.name, d);
     return d;
 }
 
@@ -334,14 +358,24 @@ void calculate() {
 
             if(t.kind == quit) break;
 
-            if(t.kind == help) std::cout << help_text << '\n';
+            if(t.kind == help) {
+                std::cout << help_text << '\n';
+                continue;
+            }
+
+            if(t.kind == variable_list) {
+                variable_table.var_list();
+                continue;
+            }
 
             if (t.kind == print) {
                 std::cout << result << calc << '\n';
-            } else {
-                ts.putback(t);
-                calc = statement();
+                continue;
             }
+
+            ts.putback(t);
+            calc = statement();
+
         } catch (const std::exception& e) {
             std::cerr << e.what() << '\n';
             error_recovery();
@@ -353,8 +387,8 @@ int main() {
     std::cout << intro;
 
     try {
-        define_name("pi", 3.1415926535);
-        define_name("e", 2.7182818284);
+        variable_table.declare("pi", 3.1415926535);
+        variable_table.declare("e", 2.7182818284);
 
         calculate();
         return 0;
@@ -367,3 +401,9 @@ int main() {
     }
 };
 
+
+/*
+ADDED FEATURE (exercise 4)
+
+1. Ability of the user to see a list of all the variables together with their values that are available in memory
+*/
