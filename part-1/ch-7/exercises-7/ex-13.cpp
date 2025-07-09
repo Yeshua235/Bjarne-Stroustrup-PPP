@@ -8,9 +8,7 @@ std::vector<int> count_string(const std::vector<std::string>& vec) {
     std::vector<int> string_count;
 
     for (std::string word : vec) {
-        int char_count{0};
-        for (char ch : word) ++char_count; //flaged as unused variable.
-        string_count.push_back(char_count);
+        string_count.push_back(word.size());
     }
     return string_count;
 }
@@ -53,7 +51,7 @@ std::pair<std::string, std::string> lex_first_last (std::vector<std::string>& ve
 
 int main() {
     try{
-        std::vector<std::string> my_string = {"my", "custom", "vector", "of", "strings"};
+        std::vector<std::string> my_string = {"my", "custom", "vector", "often", "strings"};
 
         std::cout << "printing the vector of string counts...\n";
 
